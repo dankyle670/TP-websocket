@@ -1,0 +1,10 @@
+{
+  "name": "quiz-app",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "server",
+    "host-app",
+    "player-app"
+  ]
+}
