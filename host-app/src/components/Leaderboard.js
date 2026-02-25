@@ -1,0 +1,5 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export default function Leaderboard({ players, onFinish }) {
+    const sorted = [...players].sort((a, b) => b.score - a.score);
+    return (_jsx("div", { className: "container", children: _jsxs("div", { className: "card leaderboard-container", children: [_jsx("div", { className: "leaderboard-title", children: "\uD83C\uDFC6 Final Scores \uD83C\uDFC6" }), sorted.map((player, index) => (_jsxs("div", { className: "leaderboard-item", children: [_jsxs("div", { className: `leaderboard-rank ${index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : ''}`, children: ["#", index + 1] }), _jsxs("div", { className: "leaderboard-info", children: [_jsx("div", { className: "leaderboard-name", children: player.name }), _jsxs("div", { className: "leaderboard-score", children: [player.score, " points"] })] })] }, player.id))), _jsx("div", { className: "button-group", children: _jsx("button", { onClick: onFinish, style: { width: '100%' }, children: "Finish" }) })] }) }));
+}

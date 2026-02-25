@@ -24,18 +24,32 @@ wss.on('connection', (ws: WebSocket) => {
       const msg: ClientMessage = JSON.parse(raw.toString())
       console.log("Received:", msg)
 
+      // HOST CREATE
+      if (msg.type === 'host:create') {
+        console.log("🎮 HOST CREATE - Code:", msg.quizCode)
+        const room = new QuizRoom(msg.quizCode, msg.questions)
+        rooms.set(msg.quizCode, room)
+        // Le host rejoint la room avec isHost=true
+        room.addPlayer(playerId, 'Host', ws, true)
+        playerRoom.set(playerId, msg.quizCode)
+        console.log("🎮 Host added to room. Total players:", room.players.size)
+        return
+      }
+
       // JOIN
       if (msg.type === 'join') {
+        console.log("👤 PLAYER JOIN - Code:", msg.quizCode, "Name:", msg.name)
         let room = rooms.get(msg.quizCode)
 
         if (!room) {
-          console.log("Creating new room:", msg.quizCode)
+          console.log("⚠️ Room not found, creating new one:", msg.quizCode)
           room = new QuizRoom(msg.quizCode)
           rooms.set(msg.quizCode, room)
         }
 
         room.addPlayer(playerId, msg.name, ws)
         playerRoom.set(playerId, msg.quizCode)
+        console.log("👤 Player added. Total in room:", room.players.size)
 
         return
       }

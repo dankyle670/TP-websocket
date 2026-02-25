@@ -6,6 +6,7 @@ type Player = {
   name: string
   score: number
   ws: WebSocket
+  isHost?: boolean
 }
 
 type Question = {
@@ -26,28 +27,40 @@ export class QuizRoom {
   remaining = 0
   totalTime = 10000 // 10 sec
 
-  constructor(code: string) {
+  constructor(code: string, questionsData?: Array<{ text: string; choices: string[]; correctIndex: number }>) {
     this.code = code
 
-    // Questions mock pour test
-    this.questions = [
-      {
-        id: 1,
-        text: "Capital of France?",
-        choices: ["Berlin", "Paris", "Rome", "Madrid"],
-        correctIndex: 1
-      },
-      {
-        id: 2,
-        text: "2 + 2 = ?",
-        choices: ["3", "4", "5", "22"],
-        correctIndex: 1
-      }
-    ]
+    // Si des questions sont fournies, les utiliser ; sinon utiliser des questions mock
+    if (questionsData && questionsData.length > 0) {
+      this.questions = questionsData.map((q, index) => ({
+        id: index + 1,
+        text: q.text,
+        choices: q.choices,
+        correctIndex: q.correctIndex
+      }))
+    } else {
+      // Questions mock pour test
+      this.questions = [
+        {
+          id: 1,
+          text: "Capital of France?",
+          choices: ["Berlin", "Paris", "Rome", "Madrid"],
+          correctIndex: 1
+        },
+        {
+          id: 2,
+          text: "2 + 2 = ?",
+          choices: ["3", "4", "5", "22"],
+          correctIndex: 1
+        }
+      ]
+    }
   }
 
-  addPlayer(id: string, name: string, ws: WebSocket) {
-    this.players.set(id, { id, name, score: 0, ws })
+  addPlayer(id: string, name: string, ws: WebSocket, isHost = false) {
+    console.log(`\n✅ Adding ${name} to room ${this.code}`)
+    this.players.set(id, { id, name, score: 0, ws, isHost })
+    console.log(`   Room now has ${this.players.size} players: ${Array.from(this.players.values()).map(p => p.name).join(', ')}`)
     this.broadcastState()
   }
 
@@ -133,17 +146,26 @@ export class QuizRoom {
       players: Array.from(this.players.values()).map(p => ({
         id: p.id,
         name: p.name,
-        score: p.score
+        score: p.score,
+        isHost: p.isHost || false
       }))
     }
+
+    console.log(`Room ${this.code}: Broadcasting state with ${payload.players.length} players:`, payload.players.map(p => p.name))
 
     this.broadcast(payload)
   }
 
   broadcast(data: any) {
     const json = JSON.stringify(data)
-    this.players.forEach(p => {
-      p.ws.send(json)
+    console.log(`📤 Broadcasting to ${this.players.size} players:`, data.type)
+    this.players.forEach((p, id) => {
+      console.log(`   → Sending to ${p.name} (${id}) - WS ready state: ${p.ws.readyState}`)
+      try {
+        p.ws.send(json)
+      } catch (err) {
+        console.error(`   ❌ Error sending to ${p.name}:`, err)
+      }
     })
   }
 }
