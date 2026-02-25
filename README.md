@@ -136,7 +136,7 @@ quiz-app/
 1. **Accédez au dossier du projet**
 
 ```bash
-cd /Users/ousmanesacko/Desktop/TP-websocket
+cd /Users//Desktop/TP-websocket
 ```
 
 2. **Installer les dépendances**
@@ -159,19 +159,19 @@ cd ../player-app && npx tsc --noEmit
 
 **Terminal 1 - Serveur WebSocket**
 ```bash
-cd /Users/ousmanesacko/Desktop/TP-websocket/server
+cd /Users//Desktop/TP-websocket/server
 npm run dev
 ```
 
 **Terminal 2 - Host App**
 ```bash
-cd /Users/ousmanesacko/Desktop/TP-websocket/host-app
+cd /Users//Desktop/TP-websocket/host-app
 npm run dev
 ```
 
 **Terminal 3 - Player App**
 ```bash
-cd /Users/ousmanesacko/Desktop/TP-websocket/player-app
+cd /Users//Desktop/TP-websocket/player-app
 npm run dev
 ```
 
@@ -295,7 +295,7 @@ lsof -i :5173
 ### "WebSocket connection failed"
 ```bash
 # Vérifiez le serveur
-cd /Users/ousmanesacko/Desktop/TP-websocket/server && npm run dev
+cd /Users//Desktop/TP-websocket/server && npm run dev
 ```
 
 ### Les joueurs ne s'affichent pas
