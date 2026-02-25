@@ -7,38 +7,55 @@ const wss = new WebSocketServer({ port: 8080 })
 
 console.log("WS server running on ws://localhost:8080")
 
-// Toutes les rooms
+// Rooms storage
 const rooms = new Map<string, QuizRoom>()
 
-// Permet de savoir dans quelle room est chaque joueur
+// Player → room mapping
 const playerRoom = new Map<string, string>()
 
+// Connection handler
 wss.on('connection', (ws: WebSocket) => {
-  console.log("Client connected")
 
-  // On génère un id unique par connexion
   const playerId = randomUUID()
+  console.log("Client connected:", playerId)
 
   ws.on('message', (raw) => {
+
     try {
+
       const msg: ClientMessage = JSON.parse(raw.toString())
       console.log("Received:", msg)
 
-      // JOIN
+      /*
+      =====================================
+      JOIN QUIZ
+      =====================================
+      */
       if (msg.type === 'join') {
-        let room = rooms.get(msg.quizCode)
+
+        const code = msg.quizCode.trim().toUpperCase()
+
+        const room = rooms.get(code)
 
         if (!room) {
-          console.log("Creating new room:", msg.quizCode)
-          room = new QuizRoom(msg.quizCode)
-          rooms.set(msg.quizCode, room)
+          ws.send(JSON.stringify({
+            type: "error",
+            message: "Invalid quiz code"
+          }))
+          return
         }
 
         room.addPlayer(playerId, msg.name, ws)
-        playerRoom.set(playerId, msg.quizCode)
+        playerRoom.set(playerId, code)
 
         return
       }
+
+      /*
+      =====================================
+      ROUTING AFTER JOIN
+      =====================================
+      */
 
       const roomCode = playerRoom.get(playerId)
       if (!roomCode) return
@@ -46,30 +63,70 @@ wss.on('connection', (ws: WebSocket) => {
       const room = rooms.get(roomCode)
       if (!room) return
 
-      // ANSWER
+      /*
+      =====================================
+      ANSWER
+      =====================================
+      */
       if (msg.type === 'answer') {
         room.answer(playerId, msg.choiceIndex)
       }
 
-      // HOST START
+      /*
+      =====================================
+      HOST ACTIONS
+      =====================================
+      */
       if (msg.type === 'host:start') {
         room.start()
       }
 
-      // HOST NEXT
       if (msg.type === 'host:next') {
         room.nextQ()
+      }
+
+      /*
+      =====================================
+      HOST CREATE ROOM (IMPORTANT)
+      =====================================
+      */
+      if (msg.type === 'host:create') {
+
+        const code = msg.quizCode.trim().toUpperCase()
+
+        if (rooms.has(code)) {
+          ws.send(JSON.stringify({
+            type: "error",
+            message: "Room already exists"
+          }))
+          return
+        }
+
+        rooms.set(code, new QuizRoom(code))
+
+        ws.send(JSON.stringify({
+          type: "host:room_created",
+          code
+        }))
       }
 
     } catch (err) {
       console.error("Invalid message:", err)
     }
+
   })
 
+  /*
+  =====================================
+  CLEANUP DISCONNECT
+  =====================================
+  */
   ws.on('close', () => {
+
     console.log("Client disconnected")
 
     const roomCode = playerRoom.get(playerId)
+
     if (!roomCode) return
 
     const room = rooms.get(roomCode)
@@ -77,5 +134,7 @@ wss.on('connection', (ws: WebSocket) => {
 
     room.removePlayer(playerId)
     playerRoom.delete(playerId)
+
   })
+
 })
